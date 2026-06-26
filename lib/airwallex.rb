@@ -12,16 +12,23 @@ module Airwallex
   end
 
   class << self
-    attr_accessor :config
-
     def configure
-      self.config ||= Configuration.new
-      yield(config) if block_given?
-      config
+      yield(configuration) if block_given?
+      @client = nil
+      configuration
+    end
+
+    def configuration
+      @configuration ||= Configuration.new
+    end
+
+    def reset_configuration!
+      @configuration = Configuration.new
+      @client = nil
     end
 
     def client
-      @client ||= Client.new(config || Configuration.new)
+      @client ||= Client.new
     end
   end
 end

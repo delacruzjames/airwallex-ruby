@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "bundler/setup"
+require "logger"
 require "airwallex"
 
 RSpec.configure do |config|
@@ -10,5 +11,9 @@ RSpec.configure do |config|
 
   config.mock_with :rspec do |mocks|
     mocks.verify_partial_doubles = true
+  end
+
+  config.before do
+    Airwallex.reset_configuration!
   end
 end
