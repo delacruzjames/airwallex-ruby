@@ -85,6 +85,34 @@ RSpec.describe Airwallex::Resources::PaymentIntents do
       expect { payment_intents.create("invalid") }
         .to raise_error(Airwallex::ArgumentError, "params must be a Hash")
     end
+
+    it "passes x-idempotency-key header when idempotency_key is provided" do
+      stub_login
+      stub_request(:post, create_url)
+        .to_return(status: 200, body: response_body, headers: { "Content-Type" => "application/json" })
+
+      payment_intents.create(params, idempotency_key: "order-1001-create")
+
+      expect(WebMock).to have_requested(:post, create_url)
+        .with(headers: { "x-idempotency-key" => "order-1001-create" })
+    end
+
+    it "works without idempotency_key" do
+      stub_login
+      stub_request(:post, create_url)
+        .to_return(status: 200, body: response_body, headers: { "Content-Type" => "application/json" })
+
+      result = payment_intents.create(params)
+
+      expect(result).to eq("id" => "int_123", "client_secret" => "secret_abc", "status" => "REQUIRES_PAYMENT_METHOD")
+      expect(WebMock).to(have_requested(:post, create_url)
+        .with { |req| !req.headers.key?("X-Idempotency-Key") && !req.headers.key?("x-idempotency-key") })
+    end
+
+    it "raises Airwallex::ArgumentError for invalid idempotency_key" do
+      expect { payment_intents.create(params, idempotency_key: "") }
+        .to raise_error(Airwallex::ArgumentError, "idempotency_key must be a non-empty String")
+    end
   end
 
   describe "#retrieve" do
@@ -158,6 +186,32 @@ RSpec.describe Airwallex::Resources::PaymentIntents do
       expect { payment_intents.update(payment_intent_id, "invalid") }
         .to raise_error(Airwallex::ArgumentError, "params must be a Hash")
     end
+
+    it "passes x-idempotency-key header when idempotency_key is provided" do
+      stub_login
+      stub_request(:post, update_url)
+        .to_return(status: 200, body: response_body, headers: { "Content-Type" => "application/json" })
+
+      payment_intents.update(payment_intent_id, params, idempotency_key: "order-1001-update")
+
+      expect(WebMock).to have_requested(:post, update_url)
+        .with(headers: { "x-idempotency-key" => "order-1001-update" })
+    end
+
+    it "works without idempotency_key" do
+      stub_login
+      stub_request(:post, update_url)
+        .to_return(status: 200, body: response_body, headers: { "Content-Type" => "application/json" })
+
+      result = payment_intents.update(payment_intent_id, params)
+
+      expect(result).to eq("id" => payment_intent_id, "amount" => 1500)
+    end
+
+    it "raises Airwallex::ArgumentError for invalid idempotency_key" do
+      expect { payment_intents.update(payment_intent_id, params, idempotency_key: 123) }
+        .to raise_error(Airwallex::ArgumentError, "idempotency_key must be a non-empty String")
+    end
   end
 
   describe "#cancel" do
@@ -180,6 +234,32 @@ RSpec.describe Airwallex::Resources::PaymentIntents do
     it "raises Airwallex::ArgumentError when id is nil" do
       expect { payment_intents.cancel(nil) }
         .to raise_error(Airwallex::ArgumentError, "id is required")
+    end
+
+    it "passes x-idempotency-key header when idempotency_key is provided" do
+      stub_login
+      stub_request(:post, cancel_url)
+        .to_return(status: 200, body: response_body, headers: { "Content-Type" => "application/json" })
+
+      payment_intents.cancel(payment_intent_id, idempotency_key: "order-1001-cancel")
+
+      expect(WebMock).to have_requested(:post, cancel_url)
+        .with(headers: { "x-idempotency-key" => "order-1001-cancel" })
+    end
+
+    it "works without idempotency_key" do
+      stub_login
+      stub_request(:post, cancel_url)
+        .to_return(status: 200, body: response_body, headers: { "Content-Type" => "application/json" })
+
+      result = payment_intents.cancel(payment_intent_id)
+
+      expect(result).to eq("id" => payment_intent_id, "status" => "CANCELLED")
+    end
+
+    it "raises Airwallex::ArgumentError for invalid idempotency_key" do
+      expect { payment_intents.cancel(payment_intent_id, idempotency_key: "  ") }
+        .to raise_error(Airwallex::ArgumentError, "idempotency_key must be a non-empty String")
     end
   end
 
