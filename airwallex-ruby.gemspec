@@ -20,15 +20,24 @@ Gem::Specification.new do |spec|
   spec.metadata["rubygems_mfa_required"] = "true"
 
   spec.files = Dir.chdir(__dir__) do
-    tracked_files = if system("git rev-parse --is-inside-work-tree >/dev/null 2>&1")
-                      `git ls-files -z`.split("\x0").reject do |path|
-                        path.start_with?("spec/", ".github/") || path == "Gemfile.lock"
-                      end
-                    end
+    files = if system("git rev-parse --is-inside-work-tree >/dev/null 2>&1")
+              `git ls-files -z`.split("\x0").reject do |path|
+                path.start_with?("spec/", ".github/") ||
+                  path == "Gemfile.lock" ||
+                  path.end_with?(".gem") ||
+                  path.start_with?(".env")
+              end
+            end
 
-    next tracked_files if tracked_files&.any?
+    if files.nil? || files.empty?
+      files = Dir["{lib,docs}/**/*", "README.md", "CHANGELOG.md", "LICENSE.txt", "airwallex-ruby.gemspec"]
+    end
 
-    Dir["{lib,docs}/**/*", "README.md", "CHANGELOG.md", "LICENSE.txt", "airwallex-ruby.gemspec"]
+    %w[README.md CHANGELOG.md LICENSE.txt docs/release.md].each do |path|
+      files << path if File.exist?(path) && !files.include?(path)
+    end
+
+    files
   end
 
   spec.require_paths = ["lib"]
@@ -36,5 +45,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency "faraday", "~> 2.0"
   spec.add_dependency "json", "~> 2.0"
 
+  spec.add_development_dependency "dotenv", "~> 3.0"
   spec.add_development_dependency "rails", ">= 7.2", "< 8"
+  spec.add_development_dependency "rake", "~> 13.0"
+  spec.add_development_dependency "rspec", "~> 3.13"
+  spec.add_development_dependency "rubocop", "~> 1.75"
+  spec.add_development_dependency "webmock", "~> 3.23"
 end
