@@ -119,6 +119,51 @@ client.post("/some/path", { amount: 1000 }, {}, idempotency_key: "unique-key-123
 client.patch("/some/path", { amount: 1000 }, {}, idempotency_key: "unique-key-456")
 ```
 
+### Webhook verification
+
+Verify incoming webhook requests using the raw request body and Airwallex signature headers:
+
+```ruby
+raw_body = request.body.read
+
+event = Airwallex::Webhook.construct_event(
+  payload: raw_body,
+  signature: request.headers["x-signature"],
+  timestamp: request.headers["x-timestamp"],
+  secret: ENV["AIRWALLEX_WEBHOOK_SECRET"]
+)
+
+case event["name"]
+when "payment_intent.succeeded"
+  # handle successful payment
+when "refund.accepted"
+  # handle refund accepted
+end
+```
+
+Rails example:
+
+```ruby
+class AirwallexWebhooksController < ApplicationController
+  skip_before_action :verify_authenticity_token
+
+  def create
+    event = Airwallex::Webhook.construct_event(
+      payload: request.body.read,
+      signature: request.headers["x-signature"],
+      timestamp: request.headers["x-timestamp"],
+      secret: ENV.fetch("AIRWALLEX_WEBHOOK_SECRET")
+    )
+
+    head :ok
+  rescue Airwallex::WebhookSignatureError, Airwallex::InvalidResponseError
+    head :bad_request
+  end
+end
+```
+
+Use the raw request body, verify the signature before parsing JSON, and reject requests with timestamps outside the tolerance window (default 300 seconds).
+
 ## Development
 
 ```bash
