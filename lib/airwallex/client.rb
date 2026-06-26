@@ -38,6 +38,10 @@ module Airwallex
       @authentication ||= Resources::Authentication.new(self)
     end
 
+    def payment_intents
+      @payment_intents ||= Resources::PaymentIntents.new(self)
+    end
+
     def authenticate
       authentication.login
     end
@@ -127,7 +131,7 @@ module Airwallex
       else
         raise AuthenticationError, "Authentication response has invalid expires_at"
       end
-    rescue ArgumentError, TypeError
+    rescue ::ArgumentError, ::TypeError
       raise AuthenticationError, "Authentication response has invalid expires_at"
     end
 
