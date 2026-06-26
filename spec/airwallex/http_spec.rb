@@ -167,7 +167,10 @@ RSpec.describe "Airwallex HTTP layer" do
       stub_request(:post, "#{base_url}/pa/payment_intents/create")
         .to_return(status: 400, body: error_body, headers: { "Content-Type" => "application/json" })
 
-      expect { client.post("/pa/payment_intents/create", {}, {}, authenticated: false) }.to raise_error(Airwallex::BadRequestError) do |error|
+      path = "/pa/payment_intents/create"
+
+      expect { client.post(path, {}, {}, authenticated: false) }
+        .to raise_error(Airwallex::BadRequestError) do |error|
         expect(error.message).to eq("The amount is invalid")
         expect(error.status).to eq(400)
         expect(error.code).to eq("invalid_argument")
