@@ -73,4 +73,5 @@ module Airwallex
   class ServerError < HTTPError; end
   class TimeoutError < HTTPError; end
   class InvalidResponseError < HTTPError; end
+  class WebhookSignatureError < Error; end
 end

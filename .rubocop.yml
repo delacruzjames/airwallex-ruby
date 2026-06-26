@@ -30,6 +30,7 @@ Metrics/ClassLength:
 Metrics/AbcSize:
   Exclude:
     - "lib/airwallex/client.rb"
+    - "lib/airwallex/webhook.rb"
 
 Metrics/MethodLength:
   Exclude:
@@ -38,3 +39,19 @@ Metrics/MethodLength:
 Metrics/ParameterLists:
   Exclude:
     - "lib/airwallex/client.rb"
+
+Naming/PredicateMethod:
+  Exclude:
+    - "lib/airwallex/webhook.rb"
+
+Naming/MethodParameterName:
+  Exclude:
+    - "lib/airwallex/webhook.rb"
+
+Metrics/CyclomaticComplexity:
+  Exclude:
+    - "lib/airwallex/webhook.rb"
+
+Metrics/PerceivedComplexity:
+  Exclude:
+    - "lib/airwallex/webhook.rb"
