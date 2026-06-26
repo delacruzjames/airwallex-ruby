@@ -9,6 +9,7 @@ require_relative "airwallex/resources/authentication"
 require_relative "airwallex/resources/payment_intents"
 require_relative "airwallex/resources/refunds"
 require_relative "airwallex/webhook"
+require_relative "airwallex/railtie" if defined?(Rails::Railtie)
 
 module Airwallex
   module Resources
