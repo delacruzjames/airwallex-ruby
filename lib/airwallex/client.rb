@@ -58,12 +58,16 @@ module Airwallex
       request(:get, path, params: params, headers: headers, authenticated: authenticated)
     end
 
-    def post(path, body = {}, headers = {}, authenticated: true)
-      request(:post, path, body: body, headers: headers, authenticated: authenticated)
+    def post(path, body = {}, headers = {}, authenticated: true, idempotency_key: nil)
+      validate_idempotency_key!(idempotency_key)
+      request(:post, path, body: body, headers: headers, authenticated: authenticated,
+                           idempotency_key: idempotency_key)
     end
 
-    def patch(path, body = {}, headers = {}, authenticated: true)
-      request(:patch, path, body: body, headers: headers, authenticated: authenticated)
+    def patch(path, body = {}, headers = {}, authenticated: true, idempotency_key: nil)
+      validate_idempotency_key!(idempotency_key)
+      request(:patch, path, body: body, headers: headers, authenticated: authenticated,
+                            idempotency_key: idempotency_key)
     end
 
     def delete(path, params = {}, headers = {}, authenticated: true)
@@ -85,14 +89,15 @@ module Airwallex
 
     private
 
-    def request(method, path, params: nil, body: nil, headers: {}, authenticated: true)
+    def request(method, path, params: nil, body: nil, headers: {}, authenticated: true,
+                idempotency_key: nil)
       ensure_authenticated! if authenticated
 
       response = connection.run_request(
         method,
         request_url(path),
         body,
-        merge_headers(headers, authenticated: authenticated)
+        merge_headers(headers, authenticated: authenticated, idempotency_key: idempotency_key)
       ) do |req|
         req.params.update(params) if params && !params.empty?
       end
@@ -160,10 +165,19 @@ module Airwallex
       end
     end
 
-    def merge_headers(headers, authenticated:)
+    def merge_headers(headers, authenticated:, idempotency_key: nil)
       merged = DEFAULT_HEADERS.merge(headers)
       merged = merged.merge(auth_headers) if authenticated
+      merged["x-idempotency-key"] = idempotency_key if idempotency_key
       merged
+    end
+
+    def validate_idempotency_key!(idempotency_key)
+      return if idempotency_key.nil?
+
+      return if idempotency_key.is_a?(String) && !idempotency_key.strip.empty?
+
+      raise ArgumentError, "idempotency_key must be a non-empty String"
     end
 
     def handle_response(response)
