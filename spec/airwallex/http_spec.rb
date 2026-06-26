@@ -11,7 +11,7 @@ RSpec.describe "Airwallex HTTP layer" do
       stub_request(:get, "#{base_url}/balances/current")
         .to_return(status: 200, body: '{"available":100}', headers: { "Content-Type" => "application/json" })
 
-      result = client.get("/balances/current")
+      result = client.get("/balances/current", authenticated: false)
 
       expect(result).to eq("available" => 100)
     end
@@ -23,7 +23,7 @@ RSpec.describe "Airwallex HTTP layer" do
         .with(body: { amount: 100, currency: "USD" }.to_json)
         .to_return(status: 200, body: '{"id":"int_123"}', headers: { "Content-Type" => "application/json" })
 
-      result = client.post("/pa/payment_intents/create", amount: 100, currency: "USD")
+      result = client.post("/pa/payment_intents/create", { amount: 100, currency: "USD" }, authenticated: false)
 
       expect(result).to eq("id" => "int_123")
     end
@@ -39,7 +39,7 @@ RSpec.describe "Airwallex HTTP layer" do
           headers: { "Content-Type" => "application/json" }
         )
 
-      result = client.patch("/pa/payment_intents/int_123", amount: 200)
+      result = client.patch("/pa/payment_intents/int_123", { amount: 200 }, authenticated: false)
 
       expect(result).to eq("id" => "int_123", "amount" => 200)
     end
@@ -54,7 +54,7 @@ RSpec.describe "Airwallex HTTP layer" do
           headers: { "Content-Type" => "application/json" }
         )
 
-      result = client.delete("/pa/payment_intents/int_123")
+      result = client.delete("/pa/payment_intents/int_123", {}, {}, authenticated: false)
 
       expect(result).to eq("id" => "int_123", "status" => "CANCELLED")
     end
@@ -65,14 +65,14 @@ RSpec.describe "Airwallex HTTP layer" do
       stub_request(:get, "#{base_url}/health")
         .to_return(status: 200, body: '{"status":"ok","version":1}', headers: { "Content-Type" => "application/json" })
 
-      expect(client.get("/health")).to eq("status" => "ok", "version" => 1)
+      expect(client.get("/health", authenticated: false)).to eq("status" => "ok", "version" => 1)
     end
 
     it "returns empty Hash for empty successful response" do
       stub_request(:delete, "#{base_url}/pa/payment_intents/int_123")
         .to_return(status: 204, body: "")
 
-      expect(client.delete("/pa/payment_intents/int_123")).to eq({})
+      expect(client.delete("/pa/payment_intents/int_123", {}, {}, authenticated: false)).to eq({})
     end
   end
 
@@ -82,7 +82,7 @@ RSpec.describe "Airwallex HTTP layer" do
         .with(headers: { "X-Request-Id" => "req_123" })
         .to_return(status: 200, body: "{}", headers: { "Content-Type" => "application/json" })
 
-      client.get("/balances/current", {}, "X-Request-Id" => "req_123")
+      client.get("/balances/current", {}, { "X-Request-Id" => "req_123" }, authenticated: false)
     end
 
     it "sends default JSON headers" do
@@ -90,7 +90,7 @@ RSpec.describe "Airwallex HTTP layer" do
         .with(headers: { "Content-Type" => "application/json", "Accept" => "application/json" })
         .to_return(status: 200, body: "{}", headers: { "Content-Type" => "application/json" })
 
-      client.post("/pa/payment_intents/create")
+      client.post("/pa/payment_intents/create", {}, {}, authenticated: false)
 
       expect(WebMock).not_to have_requested(:post, "#{base_url}/pa/payment_intents/create")
         .with(headers: { "Authorization" => /.+/ })
@@ -111,7 +111,7 @@ RSpec.describe "Airwallex HTTP layer" do
       stub_request(:post, "#{base_url}/pa/payment_intents/create")
         .to_return(status: 400, body: error_body, headers: { "Content-Type" => "application/json" })
 
-      expect { client.post("/pa/payment_intents/create") }
+      expect { client.post("/pa/payment_intents/create", {}, {}, authenticated: false) }
         .to raise_error(Airwallex::BadRequestError)
     end
 
@@ -119,7 +119,7 @@ RSpec.describe "Airwallex HTTP layer" do
       stub_request(:get, "#{base_url}/balances/current")
         .to_return(status: 401, body: error_body, headers: { "Content-Type" => "application/json" })
 
-      expect { client.get("/balances/current") }
+      expect { client.get("/balances/current", authenticated: false) }
         .to raise_error(Airwallex::UnauthorizedError)
     end
 
@@ -127,7 +127,7 @@ RSpec.describe "Airwallex HTTP layer" do
       stub_request(:get, "#{base_url}/balances/current")
         .to_return(status: 403, body: error_body, headers: { "Content-Type" => "application/json" })
 
-      expect { client.get("/balances/current") }
+      expect { client.get("/balances/current", authenticated: false) }
         .to raise_error(Airwallex::ForbiddenError)
     end
 
@@ -135,7 +135,7 @@ RSpec.describe "Airwallex HTTP layer" do
       stub_request(:get, "#{base_url}/pa/payment_intents/missing")
         .to_return(status: 404, body: error_body, headers: { "Content-Type" => "application/json" })
 
-      expect { client.get("/pa/payment_intents/missing") }
+      expect { client.get("/pa/payment_intents/missing", authenticated: false) }
         .to raise_error(Airwallex::NotFoundError)
     end
 
@@ -143,7 +143,7 @@ RSpec.describe "Airwallex HTTP layer" do
       stub_request(:post, "#{base_url}/pa/payment_intents/create")
         .to_return(status: 409, body: error_body, headers: { "Content-Type" => "application/json" })
 
-      expect { client.post("/pa/payment_intents/create") }
+      expect { client.post("/pa/payment_intents/create", {}, {}, authenticated: false) }
         .to raise_error(Airwallex::ConflictError)
     end
 
@@ -151,7 +151,7 @@ RSpec.describe "Airwallex HTTP layer" do
       stub_request(:get, "#{base_url}/balances/current")
         .to_return(status: 429, body: error_body, headers: { "Content-Type" => "application/json" })
 
-      expect { client.get("/balances/current") }
+      expect { client.get("/balances/current", authenticated: false) }
         .to raise_error(Airwallex::RateLimitError)
     end
 
@@ -159,7 +159,7 @@ RSpec.describe "Airwallex HTTP layer" do
       stub_request(:get, "#{base_url}/balances/current")
         .to_return(status: 500, body: error_body, headers: { "Content-Type" => "application/json" })
 
-      expect { client.get("/balances/current") }
+      expect { client.get("/balances/current", authenticated: false) }
         .to raise_error(Airwallex::ServerError)
     end
 
@@ -167,7 +167,7 @@ RSpec.describe "Airwallex HTTP layer" do
       stub_request(:post, "#{base_url}/pa/payment_intents/create")
         .to_return(status: 400, body: error_body, headers: { "Content-Type" => "application/json" })
 
-      expect { client.post("/pa/payment_intents/create") }.to raise_error(Airwallex::BadRequestError) do |error|
+      expect { client.post("/pa/payment_intents/create", {}, {}, authenticated: false) }.to raise_error(Airwallex::BadRequestError) do |error|
         expect(error.message).to eq("The amount is invalid")
         expect(error.status).to eq(400)
         expect(error.code).to eq("invalid_argument")
@@ -183,7 +183,7 @@ RSpec.describe "Airwallex HTTP layer" do
       stub_request(:get, "#{base_url}/health")
         .to_return(status: 200, body: "not-json", headers: { "Content-Type" => "application/json" })
 
-      expect { client.get("/health") }
+      expect { client.get("/health", authenticated: false) }
         .to raise_error(Airwallex::InvalidResponseError, /Invalid JSON response/)
     end
   end
@@ -192,7 +192,7 @@ RSpec.describe "Airwallex HTTP layer" do
     it "raises Airwallex::TimeoutError on Faraday timeout" do
       stub_request(:get, "#{base_url}/balances/current").to_timeout
 
-      expect { client.get("/balances/current") }
+      expect { client.get("/balances/current", authenticated: false) }
         .to raise_error(Airwallex::TimeoutError)
     end
   end

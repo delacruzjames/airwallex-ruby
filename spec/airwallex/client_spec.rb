@@ -6,11 +6,13 @@ RSpec.describe Airwallex::Client do
       client = described_class.new(
         client_id: "client_id",
         api_key: "api_key",
+        login_as: "acct_123",
         environment: :demo
       )
 
       expect(client.client_id).to eq("client_id")
       expect(client.api_key).to eq("api_key")
+      expect(client.login_as).to eq("acct_123")
       expect(client.environment).to eq(:demo)
     end
 
@@ -36,17 +38,20 @@ RSpec.describe Airwallex::Client do
       Airwallex.configure do |config|
         config.client_id = "global_client_id"
         config.api_key = "global_api_key"
+        config.login_as = "acct_global"
         config.environment = :demo
       end
 
       client = described_class.new(
         client_id: "override_client_id",
         api_key: "override_api_key",
+        login_as: "acct_override",
         environment: :production
       )
 
       expect(client.client_id).to eq("override_client_id")
       expect(client.api_key).to eq("override_api_key")
+      expect(client.login_as).to eq("acct_override")
       expect(client.environment).to eq(:production)
     end
 

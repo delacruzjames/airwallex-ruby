@@ -2,6 +2,7 @@
 
 require "json"
 require "faraday"
+require "time"
 
 module Airwallex
   class Client
@@ -10,43 +11,85 @@ module Airwallex
       "Accept" => "application/json"
     }.freeze
 
-    attr_reader :client_id, :api_key, :environment, :timeout, :open_timeout, :logger
+    TOKEN_EXPIRY_BUFFER = 60
+
+    attr_reader :client_id, :api_key, :login_as, :environment, :timeout, :open_timeout, :logger,
+                :access_token, :token_expires_at
 
     def initialize(**options)
       config = Airwallex.configuration
 
       @client_id = options.fetch(:client_id, config.client_id)
       @api_key = options.fetch(:api_key, config.api_key)
+      @login_as = options.key?(:login_as) ? options[:login_as] : config.login_as
       @environment = Configuration.validate_environment!(options.fetch(:environment, config.environment))
       @timeout = options.fetch(:timeout, config.timeout)
       @open_timeout = options.fetch(:open_timeout, config.open_timeout)
       @logger = options.fetch(:logger, config.logger)
+      @access_token = nil
+      @token_expires_at = nil
     end
 
     def base_url
       Configuration::ENVIRONMENTS.fetch(environment)
     end
 
-    def get(path, params = {}, headers = {})
-      request(:get, path, params: params, headers: headers)
+    def authenticate
+      authentication.login
     end
 
-    def post(path, body = {}, headers = {})
-      request(:post, path, body: body, headers: headers)
+    def authenticated?
+      !access_token.nil? && !token_expired?
     end
 
-    def patch(path, body = {}, headers = {})
-      request(:patch, path, body: body, headers: headers)
+    def auth_headers
+      { "Authorization" => "Bearer #{access_token}" }
     end
 
-    def delete(path, params = {}, headers = {})
-      request(:delete, path, params: params, headers: headers)
+    def get(path, params = {}, headers = {}, authenticated: true)
+      request(:get, path, params: params, headers: headers, authenticated: authenticated)
+    end
+
+    def post(path, body = {}, headers = {}, authenticated: true)
+      request(:post, path, body: body, headers: headers, authenticated: authenticated)
+    end
+
+    def patch(path, body = {}, headers = {}, authenticated: true)
+      request(:patch, path, body: body, headers: headers, authenticated: authenticated)
+    end
+
+    def delete(path, params = {}, headers = {}, authenticated: true)
+      request(:delete, path, params: params, headers: headers, authenticated: authenticated)
+    end
+
+    def validate_credentials!
+      raise ConfigurationError, "client_id is required" if client_id.nil? || client_id.to_s.empty?
+      raise ConfigurationError, "api_key is required" if api_key.nil? || api_key.to_s.empty?
+    end
+
+    def store_token!(response)
+      token = response["token"]
+      raise AuthenticationError, "Authentication response missing token" if token.nil? || token.to_s.empty?
+
+      @access_token = token
+      @token_expires_at = parse_expires_at(response["expires_at"])
     end
 
     private
 
-    def request(method, path, params: nil, body: nil, headers: {})
-      response = connection.run_request(method, request_url(path), body, merge_headers(headers)) do |req|
+    def authentication
+      @authentication ||= Resources::Authentication.new(self)
+    end
+
+    def request(method, path, params: nil, body: nil, headers: {}, authenticated: true)
+      ensure_authenticated! if authenticated
+
+      response = connection.run_request(
+        method,
+        request_url(path),
+        body,
+        merge_headers(headers, authenticated: authenticated)
+      ) do |req|
         req.params.update(params) if params && !params.empty?
       end
 
@@ -57,6 +100,35 @@ module Airwallex
       raise TimeoutError, e.message if timeout_error?(e)
 
       raise
+    end
+
+    def ensure_authenticated!
+      authenticate unless authenticated?
+    end
+
+    def token_expired?
+      return true if access_token.nil? || token_expires_at.nil?
+
+      Time.now >= (token_expires_at - TOKEN_EXPIRY_BUFFER)
+    end
+
+    def parse_expires_at(value)
+      if value.nil? || value.to_s.strip.empty?
+        raise AuthenticationError, "Authentication response has invalid expires_at"
+      end
+
+      case value
+      when Time
+        value
+      when Integer, Float
+        Time.at(value)
+      when String
+        Time.parse(value)
+      else
+        raise AuthenticationError, "Authentication response has invalid expires_at"
+      end
+    rescue ArgumentError, TypeError
+      raise AuthenticationError, "Authentication response has invalid expires_at"
     end
 
     def timeout_error?(error)
@@ -84,8 +156,10 @@ module Airwallex
       end
     end
 
-    def merge_headers(headers)
-      DEFAULT_HEADERS.merge(headers)
+    def merge_headers(headers, authenticated:)
+      merged = DEFAULT_HEADERS.merge(headers)
+      merged = merged.merge(auth_headers) if authenticated
+      merged
     end
 
     def handle_response(response)

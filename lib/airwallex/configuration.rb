@@ -7,7 +7,7 @@ module Airwallex
       production: "https://api.airwallex.com/api/v1"
     }.freeze
 
-    attr_accessor :client_id, :api_key, :timeout, :open_timeout, :logger
+    attr_accessor :client_id, :api_key, :login_as, :timeout, :open_timeout, :logger
     attr_reader :environment
 
     def initialize

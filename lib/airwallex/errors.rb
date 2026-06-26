@@ -7,6 +7,9 @@ module Airwallex
   class ConfigurationError < Error
   end
 
+  class AuthenticationError < Error
+  end
+
   class HTTPError < Error
     attr_reader :status, :code, :source, :details, :response_body
 

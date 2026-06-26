@@ -22,11 +22,12 @@ RSpec.describe Airwallex::Configuration do
   end
 
   describe "attribute assignment" do
-    it "stores client_id, api_key, environment, timeout, open_timeout, and logger" do
+    it "stores client_id, api_key, login_as, environment, timeout, open_timeout, and logger" do
       logger = Logger.new($stdout)
 
       config.client_id = "client_id"
       config.api_key = "api_key"
+      config.login_as = "acct_123"
       config.environment = :production
       config.timeout = 60
       config.open_timeout = 20
@@ -34,6 +35,7 @@ RSpec.describe Airwallex::Configuration do
 
       expect(config.client_id).to eq("client_id")
       expect(config.api_key).to eq("api_key")
+      expect(config.login_as).to eq("acct_123")
       expect(config.environment).to eq(:production)
       expect(config.timeout).to eq(60)
       expect(config.open_timeout).to eq(20)
