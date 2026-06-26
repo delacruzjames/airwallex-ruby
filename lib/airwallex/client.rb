@@ -34,6 +34,10 @@ module Airwallex
       Configuration::ENVIRONMENTS.fetch(environment)
     end
 
+    def authentication
+      @authentication ||= Resources::Authentication.new(self)
+    end
+
     def authenticate
       authentication.login
     end
@@ -76,10 +80,6 @@ module Airwallex
     end
 
     private
-
-    def authentication
-      @authentication ||= Resources::Authentication.new(self)
-    end
 
     def request(method, path, params: nil, body: nil, headers: {}, authenticated: true)
       ensure_authenticated! if authenticated

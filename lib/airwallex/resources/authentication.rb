@@ -8,7 +8,7 @@ module Airwallex
       def login
         client.validate_credentials!
 
-        response = client.post(LOGIN_PATH, {}, authentication_headers, authenticated: false)
+        response = post(LOGIN_PATH, {}, authentication_headers, authenticated: false)
         client.store_token!(response)
         response
       end
