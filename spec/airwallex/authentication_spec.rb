@@ -239,8 +239,92 @@ RSpec.describe "Airwallex authentication" do
 end
 
 RSpec.describe Airwallex::Resources::Authentication do
+  let(:client) do
+    Airwallex::Client.new(
+      client_id: "client_id",
+      api_key: "api_key",
+      environment: :demo
+    )
+  end
+  let(:authentication) { client.authentication }
+  let(:base_url) { "https://api-demo.airwallex.com/api/v1" }
+  let(:login_url) { "#{base_url}/authentication/login" }
+  let(:expires_at) { Time.now + 3600 }
+  let(:auth_response_body) do
+    {
+      token: "test_access_token",
+      expires_at: expires_at.iso8601
+    }.to_json
+  end
+
+  def stub_login(response_body: auth_response_body, status: 200)
+    stub_request(:post, login_url)
+      .to_return(status: status, body: response_body, headers: { "Content-Type" => "application/json" })
+  end
+
   it "inherits from Airwallex::Resources::BaseResource" do
     expect(described_class).to be < Airwallex::Resources::BaseResource
+  end
+
+  describe "#login" do
+    it "calls POST /authentication/login" do
+      stub_login
+
+      authentication.login
+
+      expect(WebMock).to have_requested(:post, login_url)
+    end
+
+    it "uses authenticated: false" do
+      stub_login
+
+      expect(client).to receive(:post)
+        .with("/authentication/login", {}, hash_including("x-client-id" => "client_id"), authenticated: false)
+        .and_call_original
+
+      authentication.login
+    end
+  end
+end
+
+RSpec.describe Airwallex::Client do
+  describe "#authentication" do
+    let(:client) do
+      described_class.new(
+        client_id: "client_id",
+        api_key: "api_key",
+        environment: :demo
+      )
+    end
+
+    it "returns Airwallex::Resources::Authentication" do
+      expect(client.authentication).to be_a(Airwallex::Resources::Authentication)
+    end
+
+    it "memoizes the resource object" do
+      first = client.authentication
+      second = client.authentication
+
+      expect(first).to equal(second)
+    end
+  end
+
+  describe "#authenticate" do
+    let(:client) do
+      described_class.new(
+        client_id: "client_id",
+        api_key: "api_key",
+        environment: :demo
+      )
+    end
+
+    it "delegates to authentication.login" do
+      login_response = { "token" => "test_access_token", "expires_at" => (Time.now + 3600).iso8601 }
+
+      expect(client.authentication).to receive(:login).and_return(login_response)
+
+      expect(client.authenticate).to eq(login_response)
+    end
   end
 end
 
