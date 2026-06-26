@@ -1,5 +1,8 @@
 # airwallex-ruby
 
+[![CI](https://github.com/delacruzjames/airwallex-ruby/actions/workflows/ci.yml/badge.svg)](https://github.com/delacruzjames/airwallex-ruby/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/github/license/delacruzjames/airwallex-ruby)](LICENSE.txt)
+
 Unofficial Ruby SDK for Airwallex APIs.
 
 ## Disclaimer
@@ -321,12 +324,69 @@ rescue Airwallex::Error => e
 end
 ```
 
+## Release / Local Installation
+
+Build the gem from a checkout:
+
+```bash
+gem build airwallex-ruby.gemspec
+```
+
+Or use the Rake task (output goes to `pkg/`):
+
+```bash
+bundle exec rake build
+```
+
+Install locally:
+
+```bash
+gem install ./airwallex-ruby-0.1.0.gem
+# or, after rake build:
+gem install ./pkg/airwallex-ruby-0.1.0.gem
+```
+
+Test in IRB:
+
+```ruby
+require "airwallex"
+Airwallex::VERSION
+# => "0.1.0"
+```
+
+## Publishing
+
+Do not publish until the release checklist is complete and changes have been reviewed.
+
+### Automated (recommended)
+
+After review, tag and push. GitHub Actions publishes to RubyGems and creates a GitHub Release:
+
+```bash
+git tag v0.1.0
+git push origin main
+git push origin v0.1.0
+```
+
+Requires the `RUBYGEMS_API_KEY` repository secret. See [docs/release.md](docs/release.md).
+
+### Manual
+
+```bash
+gem push airwallex-ruby-0.1.0.gem
+# or, after rake build:
+gem push pkg/airwallex-ruby-0.1.0.gem
+```
+
+See [docs/release.md](docs/release.md) for the full release checklist.
+
 ## Development
 
 ```bash
 bundle install
 bundle exec rspec
 bundle exec rubocop
+bundle exec rake build
 ```
 
 See [docs/airwallex-research.md](docs/airwallex-research.md) for API notes and planned resources.

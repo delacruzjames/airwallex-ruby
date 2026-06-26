@@ -3,9 +3,15 @@ name: Release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Git tag to release (e.g. v0.1.0)"
+        required: true
+        type: string
 
 concurrency:
-  group: release-${{ github.event.release.tag_name }}
+  group: release-${{ github.event.release.tag_name || github.event.inputs.tag || github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -17,11 +23,21 @@ jobs:
     name: Merge develop, build, and publish gem
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve release tag
+        id: release
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Verify release is from develop
+        if: github.event_name == 'release'
         run: |
           target="${{ github.event.release.target_commitish }}"
           if [ "$target" != "develop" ]; then
@@ -30,28 +46,32 @@ jobs:
           fi
 
       - name: Merge develop into master
+        if: github.event_name == 'release'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin develop master
           git checkout master
-          git merge origin/develop --no-edit -m "Release ${{ github.event.release.tag_name }}"
+          git merge origin/develop --no-edit -m "Release ${{ steps.release.outputs.tag }}"
           git push origin master
 
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ steps.release.outputs.tag }}
           fetch-depth: 0
 
-      - name: Verify release tag matches gem version
+      - name: Verify tag matches gem version
         run: |
-          tag="${{ github.event.release.tag_name }}"
-          version="${tag#v}"
-          gem_version="$(ruby -r ./lib/airwallex/version.rb -e 'puts Airwallex::VERSION')"
-          if [ "$version" != "$gem_version" ]; then
-            echo "Release tag $tag (version $version) does not match Airwallex::VERSION ($gem_version)"
+          tag="${{ steps.release.outputs.tag }}"
+          expected_version="${tag#v}"
+          actual_version="$(ruby -r ./lib/airwallex/version -e 'puts Airwallex::VERSION')"
+
+          if [ "$expected_version" != "$actual_version" ]; then
+            echo "Tag version ($expected_version) does not match Airwallex::VERSION ($actual_version)"
             exit 1
           fi
+
+          echo "Release version: $actual_version"
 
       - uses: ruby/setup-ruby@v1
         with:
@@ -59,11 +79,28 @@ jobs:
           bundler: "2.6.9"
           bundler-cache: true
 
-      - name: Run test suite
+      - name: Run RuboCop
+        run: bundle exec rubocop
+
+      - name: Run RSpec
         run: bundle exec rspec
 
       - name: Build gem
-        run: gem build airwallex-ruby.gemspec
+        run: bundle exec rake build
+
+      - name: Verify built gem filename
+        run: |
+          version="${{ steps.release.outputs.tag }}"
+          version="${version#v}"
+          gem_file="pkg/airwallex-ruby-${version}.gem"
+
+          if [ ! -f "$gem_file" ]; then
+            echo "Expected gem file not found: $gem_file"
+            ls -la pkg/
+            exit 1
+          fi
+
+          echo "gem_file=$gem_file" >> "$GITHUB_ENV"
 
       - name: Configure RubyGems credentials
         uses: rubygems/configure-rubygems-credentials@v1
@@ -73,9 +110,19 @@ jobs:
           GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
 
       - name: Publish to RubyGems
-        run: gem push airwallex-ruby-*.gem
+        run: gem push "$gem_file"
 
       - name: Attach gem to GitHub Release
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          files: airwallex-ruby-*.gem
+          files: pkg/*.gem
+
+      - name: Create GitHub Release
+        if: github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release.outputs.tag }}
+          name: ${{ steps.release.outputs.tag }}
+          generate_release_notes: true
+          files: pkg/*.gem
