@@ -1,9 +1,8 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       tag:
@@ -12,15 +11,16 @@ on:
         type: string
 
 concurrency:
-  group: release-${{ github.workflow }}-${{ github.ref }}
+  group: release-${{ github.event.release.tag_name || github.event.inputs.tag || github.ref }}
   cancel-in-progress: false
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   release:
-    name: Build and publish gem
+    name: Merge develop, build, and publish gem
     runs-on: ubuntu-latest
     steps:
       - name: Resolve release tag
@@ -29,34 +29,55 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify release is from develop
+        if: github.event_name == 'release'
+        run: |
+          target="${{ github.event.release.target_commitish }}"
+          if [ "$target" != "develop" ]; then
+            echo "Release target must be develop (got: $target)"
+            exit 1
+          fi
+
+      - name: Merge develop into master
+        if: github.event_name == 'release'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin develop master
+          git checkout master
+          git merge origin/develop --no-edit -m "Release ${{ steps.release.outputs.tag }}"
+          git push origin master
+
+      - uses: actions/checkout@v4
         with:
           ref: ${{ steps.release.outputs.tag }}
           fetch-depth: 0
 
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - name: Verify tag matches gem version
+        run: |
+          tag="${{ steps.release.outputs.tag }}"
+          expected_version="${tag#v}"
+          actual_version="$(ruby -r ./lib/airwallex/version -e 'puts Airwallex::VERSION')"
+
+          if [ "$expected_version" != "$actual_version" ]; then
+            echo "Tag version ($expected_version) does not match Airwallex::VERSION ($actual_version)"
+            exit 1
+          fi
+
+          echo "Release version: $actual_version"
+
+      - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.3"
           bundler: "2.6.9"
           bundler-cache: true
-
-      - name: Verify tag matches gem version
-        run: |
-          TAG="${{ steps.release.outputs.tag }}"
-          EXPECTED_VERSION="${TAG#v}"
-          ACTUAL_VERSION="$(ruby -r ./lib/airwallex/version -e 'puts Airwallex::VERSION')"
-
-          if [ "$EXPECTED_VERSION" != "$ACTUAL_VERSION" ]; then
-            echo "Tag version ($EXPECTED_VERSION) does not match Airwallex::VERSION ($ACTUAL_VERSION)"
-            exit 1
-          fi
-
-          echo "Release version: $ACTUAL_VERSION"
 
       - name: Run RuboCop
         run: bundle exec rubocop
@@ -69,24 +90,36 @@ jobs:
 
       - name: Verify built gem filename
         run: |
-          VERSION="${{ steps.release.outputs.tag }}"
-          VERSION="${VERSION#v}"
-          GEM_FILE="pkg/airwallex-ruby-${VERSION}.gem"
+          version="${{ steps.release.outputs.tag }}"
+          version="${version#v}"
+          gem_file="pkg/airwallex-ruby-${version}.gem"
 
-          if [ ! -f "$GEM_FILE" ]; then
-            echo "Expected gem file not found: $GEM_FILE"
+          if [ ! -f "$gem_file" ]; then
+            echo "Expected gem file not found: $gem_file"
             ls -la pkg/
             exit 1
           fi
 
-          echo "gem_file=$GEM_FILE" >> "$GITHUB_ENV"
+          echo "gem_file=$gem_file" >> "$GITHUB_ENV"
 
-      - name: Publish to RubyGems
+      - name: Configure RubyGems credentials
+        uses: rubygems/configure-rubygems-credentials@v1
+        with:
+          setup-trusted-publisher: true
         env:
           GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+
+      - name: Publish to RubyGems
         run: gem push "$gem_file"
 
+      - name: Attach gem to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: pkg/*.gem
+
       - name: Create GitHub Release
+        if: github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.release.outputs.tag }}
