@@ -103,11 +103,9 @@ jobs:
           echo "gem_file=$gem_file" >> "$GITHUB_ENV"
 
       - name: Configure RubyGems credentials
-        uses: rubygems/configure-rubygems-credentials@v1
+        uses: rubygems/configure-rubygems-credentials@v2.1.0
         with:
-          setup-trusted-publisher: true
-        env:
-          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+          api-token: ${{ secrets.RUBYGEMS_API_KEY }}
 
       - name: Publish to RubyGems
         run: gem push "$gem_file"
