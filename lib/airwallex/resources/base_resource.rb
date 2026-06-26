@@ -26,6 +26,14 @@ module Airwallex
       def delete(path, params = {}, headers = {}, authenticated: true)
         client.delete(path, params, headers, authenticated: authenticated)
       end
+
+      def validate_id!(id, name = "id")
+        raise Airwallex::ArgumentError, "#{name} is required" if id.nil? || id.to_s.strip.empty?
+      end
+
+      def validate_params!(params)
+        raise Airwallex::ArgumentError, "params must be a Hash" unless params.is_a?(Hash)
+      end
     end
   end
 end

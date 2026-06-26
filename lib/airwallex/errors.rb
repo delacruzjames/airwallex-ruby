@@ -7,6 +7,9 @@ module Airwallex
   class ConfigurationError < Error
   end
 
+  class ArgumentError < Error
+  end
+
   class AuthenticationError < Error
   end
 
