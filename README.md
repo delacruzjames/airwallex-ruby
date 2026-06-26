@@ -40,7 +40,25 @@ end
 client = Airwallex.client
 ```
 
-Phase 1 provides the foundation only. HTTP requests and resource methods will be added in later phases.
+### Payment Intents
+
+```ruby
+client = Airwallex::Client.new(
+  client_id: ENV["AIRWALLEX_CLIENT_ID"],
+  api_key: ENV["AIRWALLEX_API_KEY"],
+  environment: :demo
+)
+
+payment_intent = client.payment_intents.create(
+  amount: 1000,
+  currency: "PHP",
+  merchant_order_id: "ORDER-1001",
+  return_url: "https://example.com/return"
+)
+
+puts payment_intent["id"]
+puts payment_intent["client_secret"]
+```
 
 ## Development
 
