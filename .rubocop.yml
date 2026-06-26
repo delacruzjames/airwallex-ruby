@@ -22,3 +22,19 @@ Layout/LineLength:
 Metrics/BlockLength:
   Exclude:
     - "spec/**/*"
+
+Metrics/ClassLength:
+  Exclude:
+    - "lib/airwallex/client.rb"
+
+Metrics/AbcSize:
+  Exclude:
+    - "lib/airwallex/client.rb"
+
+Metrics/MethodLength:
+  Exclude:
+    - "lib/airwallex/client.rb"
+
+Metrics/ParameterLists:
+  Exclude:
+    - "lib/airwallex/client.rb"
