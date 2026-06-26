@@ -10,11 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Configuration support
+- Demo and production environments
 - Faraday HTTP client
 - Authentication and token caching
 - PaymentIntents resource
 - Refunds resource
 - Idempotency key support
 - Webhook signature verification
-- Rails initializer generator
+- Optional Rails initializer generator
 - RSpec/WebMock test coverage
+- Documentation and examples
