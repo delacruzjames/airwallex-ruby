@@ -26,6 +26,74 @@ Or install the gem directly (once published):
 gem install airwallex-ruby
 ```
 
+## Rails Installation
+
+Run:
+
+```bash
+rails generate airwallex:install
+```
+
+This creates:
+
+```
+config/initializers/airwallex.rb
+```
+
+Credentials example:
+
+```yaml
+airwallex:
+  client_id: your_client_id
+  api_key: your_api_key
+  login_as: optional_account_id
+```
+
+Initializer example:
+
+```ruby
+Airwallex.configure do |config|
+  config.client_id = Rails.application.credentials.dig(:airwallex, :client_id) || ENV["AIRWALLEX_CLIENT_ID"]
+  config.api_key = Rails.application.credentials.dig(:airwallex, :api_key) || ENV["AIRWALLEX_API_KEY"]
+  config.login_as = Rails.application.credentials.dig(:airwallex, :login_as) || ENV["AIRWALLEX_LOGIN_AS"]
+  config.environment = Rails.env.production? ? :production : :demo
+end
+```
+
+Webhook controller example:
+
+```ruby
+class AirwallexWebhooksController < ApplicationController
+  skip_before_action :verify_authenticity_token
+
+  def create
+    event = Airwallex::Webhook.construct_event(
+      payload: request.body.read,
+      signature: request.headers["x-signature"],
+      timestamp: request.headers["x-timestamp"],
+      secret: Rails.application.credentials.dig(:airwallex, :webhook_secret) || ENV.fetch("AIRWALLEX_WEBHOOK_SECRET")
+    )
+
+    case event["name"]
+    when "payment_intent.succeeded"
+      # handle payment success
+    when "refund.accepted"
+      # handle refund accepted
+    end
+
+    head :ok
+  rescue Airwallex::WebhookSignatureError, Airwallex::InvalidResponseError
+    head :bad_request
+  end
+end
+```
+
+Route example:
+
+```ruby
+post "/webhooks/airwallex", to: "airwallex_webhooks#create"
+```
+
 ## Usage
 
 ```ruby
@@ -141,28 +209,7 @@ when "refund.accepted"
 end
 ```
 
-Rails example:
-
-```ruby
-class AirwallexWebhooksController < ApplicationController
-  skip_before_action :verify_authenticity_token
-
-  def create
-    event = Airwallex::Webhook.construct_event(
-      payload: request.body.read,
-      signature: request.headers["x-signature"],
-      timestamp: request.headers["x-timestamp"],
-      secret: ENV.fetch("AIRWALLEX_WEBHOOK_SECRET")
-    )
-
-    head :ok
-  rescue Airwallex::WebhookSignatureError, Airwallex::InvalidResponseError
-    head :bad_request
-  end
-end
-```
-
-Use the raw request body, verify the signature before parsing JSON, and reject requests with timestamps outside the tolerance window (default 300 seconds).
+Use the raw request body, verify the signature before parsing JSON, and reject requests with timestamps outside the tolerance window (default 300 seconds). See the [Rails Installation](#rails-installation) section for a full webhook controller example.
 
 ## Development
 
