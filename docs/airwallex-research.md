@@ -37,6 +37,25 @@ Optional header for scoped keys:
 
 - `x-login-as` — target account ID when the API key is scoped to multiple accounts
 
+## Current implemented resources
+
+**Implemented:**
+
+- Authentication
+- PaymentIntents
+- Refunds
+- Webhook verification
+- Rails initializer generator
+
+**Planned:**
+
+- PaymentIntent confirm/capture
+- Customers
+- PaymentConsents
+- Transfers
+- Balances
+- Transactions
+
 ## Planned resources (initial scope)
 
 | Resource | Purpose |
@@ -50,9 +69,7 @@ Optional header for scoped keys:
 
 ## Phase roadmap
 
-1. **Phase 1 (current)** — Gem skeleton, configuration, empty client/resources
-2. **Phase 2** — HTTP client, authentication, token caching
-3. **Phase 3+** — Individual API resources with tests (WebMock + optional sandbox integration)
+Phases 1–10 are complete (foundation, HTTP client, authentication, PaymentIntents, Refunds, idempotency, webhooks, Rails integration). Phase 11 covers documentation and developer experience. Future phases add more API resources and integration test mode.
 
 ## References
 
