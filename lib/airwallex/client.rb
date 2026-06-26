@@ -42,6 +42,10 @@ module Airwallex
       @payment_intents ||= Resources::PaymentIntents.new(self)
     end
 
+    def refunds
+      @refunds ||= Resources::Refunds.new(self)
+    end
+
     def authenticate
       authentication.login
     end
