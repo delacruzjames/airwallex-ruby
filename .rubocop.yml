@@ -31,6 +31,7 @@ Gemspec/DevelopmentDependencies:
 Style/FetchEnvVar:
   Exclude:
     - "lib/generators/**/*"
+    - "examples/**/*"
 
 Metrics/ClassLength:
   Exclude:
