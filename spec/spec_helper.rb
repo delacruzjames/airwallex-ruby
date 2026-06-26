@@ -2,7 +2,10 @@
 
 require "bundler/setup"
 require "logger"
+require "webmock/rspec"
 require "airwallex"
+
+WebMock.disable_net_connect!(allow_localhost: true)
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
