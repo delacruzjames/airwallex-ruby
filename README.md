@@ -60,6 +60,39 @@ puts payment_intent["id"]
 puts payment_intent["client_secret"]
 ```
 
+### Idempotency
+
+Use idempotency keys for payment creation, updates, cancellations, refunds, and any operation that should not be duplicated. The key should be unique per operation — a good pattern is your internal order ID plus the operation name.
+
+```ruby
+payment_intent = client.payment_intents.create(
+  {
+    amount: 1000,
+    currency: "PHP",
+    merchant_order_id: "ORDER-1001"
+  },
+  idempotency_key: "order-1001-create"
+)
+
+client.payment_intents.update(
+  payment_intent["id"],
+  { amount: 1500 },
+  idempotency_key: "order-1001-update"
+)
+
+client.payment_intents.cancel(
+  payment_intent["id"],
+  idempotency_key: "order-1001-cancel"
+)
+```
+
+Lower-level HTTP methods also accept `idempotency_key` on POST and PATCH:
+
+```ruby
+client.post("/some/path", { amount: 1000 }, {}, idempotency_key: "unique-key-123")
+client.patch("/some/path", { amount: 1000 }, {}, idempotency_key: "unique-key-456")
+```
+
 ## Development
 
 ```bash
