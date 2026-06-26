@@ -22,6 +22,15 @@ Layout/LineLength:
 Metrics/BlockLength:
   Exclude:
     - "spec/**/*"
+    - "airwallex-ruby.gemspec"
+
+Gemspec/DevelopmentDependencies:
+  Exclude:
+    - "airwallex-ruby.gemspec"
+
+Style/FetchEnvVar:
+  Exclude:
+    - "lib/generators/**/*"
 
 Metrics/ClassLength:
   Exclude:
