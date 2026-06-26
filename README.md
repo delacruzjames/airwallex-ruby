@@ -60,6 +60,32 @@ puts payment_intent["id"]
 puts payment_intent["client_secret"]
 ```
 
+### Refunds
+
+```ruby
+refund = client.refunds.create(
+  {
+    payment_intent_id: "int_123",
+    amount: 500,
+    reason: "requested_by_customer",
+    metadata: {
+      order_id: "ORDER-1001"
+    }
+  },
+  idempotency_key: "order-1001-refund-1"
+)
+
+puts refund["id"]
+
+refund = client.refunds.retrieve("ref_123")
+
+refunds = client.refunds.list(
+  payment_intent_id: "int_123",
+  page_num: 0,
+  page_size: 20
+)
+```
+
 ### Idempotency
 
 Use idempotency keys for payment creation, updates, cancellations, refunds, and any operation that should not be duplicated. The key should be unique per operation — a good pattern is your internal order ID plus the operation name.

@@ -7,6 +7,7 @@ require_relative "airwallex/client"
 require_relative "airwallex/resources/base_resource"
 require_relative "airwallex/resources/authentication"
 require_relative "airwallex/resources/payment_intents"
+require_relative "airwallex/resources/refunds"
 
 module Airwallex
   module Resources
