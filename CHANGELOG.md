@@ -24,3 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI workflow
 - Repository security and contribution docs
 - Lightweight Rails sample integration app
+- Sandbox integration checklist
+- Safe manual sandbox scripts for authentication, PaymentIntent creation/retrieval, refund creation, and webhook signature verification
+- `.env.example` for sandbox credentials

@@ -398,6 +398,29 @@ gem push pkg/airwallex-ruby-0.1.0.gem
 
 See [docs/release.md](docs/release.md) for the full release checklist.
 
+## Sandbox Integration Checks
+
+Manual sandbox verification scripts are available under:
+
+```
+scripts/sandbox
+```
+
+See:
+
+[docs/sandbox.md](docs/sandbox.md)
+
+Example:
+
+```bash
+cp .env.example .env
+bundle exec rspec
+ruby scripts/sandbox/authenticate.rb
+ruby scripts/sandbox/create_payment_intent.rb
+```
+
+These scripts require Airwallex sandbox credentials and are not part of the automated unit test suite.
+
 ## Development
 
 ```bash
