@@ -48,4 +48,8 @@ RSpec.describe "gem package" do
   it "does not include spec files in the packaged gem" do
     expect(gemspec.files.none? { |path| path.start_with?("spec/") }).to be(true)
   end
+
+  it "does not include the Rails sample app in the packaged gem" do
+    expect(gemspec.files.none? { |path| path.start_with?("examples/rails_app/") }).to be(true)
+  end
 end

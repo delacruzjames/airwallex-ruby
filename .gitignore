@@ -12,4 +12,9 @@
 .DS_Store
 .env
 .env.*
+examples/rails_app/tmp/
+examples/rails_app/log/
+examples/rails_app/storage/
+examples/rails_app/config/master.key
+examples/rails_app/config/credentials.yml.enc
 Gemfile.lock
