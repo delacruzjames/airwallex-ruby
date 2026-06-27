@@ -12,6 +12,7 @@
 .DS_Store
 .env
 .env.*
+!.env.example
 examples/rails_app/tmp/
 examples/rails_app/log/
 examples/rails_app/storage/

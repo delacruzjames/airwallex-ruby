@@ -33,15 +33,17 @@ Style/FetchEnvVar:
   Exclude:
     - "lib/generators/**/*"
     - "examples/**/*"
-
-Metrics/ClassLength:
-  Exclude:
-    - "lib/airwallex/client.rb"
+    - "scripts/sandbox/**/*"
 
 Metrics/AbcSize:
   Exclude:
     - "lib/airwallex/client.rb"
     - "lib/airwallex/webhook.rb"
+    - "scripts/sandbox/**/*"
+
+Metrics/ClassLength:
+  Exclude:
+    - "lib/airwallex/client.rb"
 
 Metrics/MethodLength:
   Exclude:
