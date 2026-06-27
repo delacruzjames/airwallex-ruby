@@ -286,6 +286,24 @@ post "/webhooks/airwallex", to: "airwallex_webhooks#create"
 
 See also [examples/rails_webhook_controller.rb](examples/rails_webhook_controller.rb).
 
+## Sample Rails App
+
+A lightweight Rails integration example is available in:
+
+```
+examples/rails_app
+```
+
+It demonstrates:
+
+- Airwallex initializer configuration
+- PaymentIntent creation
+- Refund creation
+- Webhook verification
+- Example routes
+
+See [docs/examples.md](docs/examples.md) for more usage notes.
+
 ## Error handling
 
 The SDK raises typed errors for configuration, authentication, HTTP status codes, timeouts, invalid responses, and webhook verification failures.
@@ -409,6 +427,13 @@ See [docs/airwallex-research.md](docs/airwallex-research.md) for API notes and p
 - File uploads
 - More Rails generators
 - Integration test mode
+
+## Repository
+
+- Issues: use GitHub Issues for bugs and feature requests.
+- Pull requests: contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+- Security: do not report vulnerabilities in public issues. See [SECURITY.md](SECURITY.md).
+- CI: GitHub Actions runs specs, RuboCop, and gem build.
 
 ## Contributing
 

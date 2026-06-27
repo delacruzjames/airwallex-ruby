@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
   spec.files = Dir.chdir(__dir__) do
     files = if system("git rev-parse --is-inside-work-tree >/dev/null 2>&1")
               `git ls-files -z`.split("\x0").reject do |path|
-                path.start_with?("spec/", ".github/") ||
+                path.start_with?("spec/", ".github/", "examples/rails_app/") ||
                   path == "Gemfile.lock" ||
                   path.end_with?(".gem") ||
                   path.start_with?(".env")

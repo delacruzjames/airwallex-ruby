@@ -20,3 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional Rails initializer generator
 - RSpec/WebMock test coverage
 - Documentation and examples
+- GitHub issue and pull request templates
+- GitHub Actions CI workflow
+- Repository security and contribution docs
+- Lightweight Rails sample integration app
